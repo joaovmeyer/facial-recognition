@@ -11,3 +11,5 @@ Here we can have a look at the eigenfaces, along with the mean face.
 ![af4d042b-0228-4baa-a869-44536464a1e7](https://github.com/joaovmeyer/facial-recognition/assets/144701021/0f6e5193-f9cd-4758-8a4f-226db7d0798b)
 
 Here we can see how it reconstructs a face as a linear combination of the eigenfaces, and also see it's predictions
+
+Note that using more eigenfaces will result in better reconstruction quality, but it does not necessarily mean the accuracy will improve, at least not considerably. In the example I used 20 eigenfaces and I think the best value is in this range, having decent performance along with decent accuracy.
