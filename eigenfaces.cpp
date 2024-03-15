@@ -40,6 +40,8 @@ Vec getImageGrayscale(const string& src) {
 
 
 
+
+
 void drawImage(olc::Sprite* sprite, double x0, double y0, double x1, double y1, Graph& graph, const Vec& image, size_t imgWidth) {
 	for (size_t i = 0; i < image.size; ++i) {
 		int x = i % imgWidth;
@@ -57,6 +59,10 @@ void drawImage(olc::Sprite* sprite, double x0, double y0, double x1, double y1, 
 
 
 
+
+
+
+
 int main() {
 
 	Graph graph;
@@ -67,9 +73,9 @@ int main() {
 	int height = 80;
 
 	// generating the dataset
-	for (int i = 0; i < 40; ++i) {
+	for (int i = 0; i < 41; ++i) {
 
-		Vec classification = Vec::zeros(40);
+		Vec classification = Vec::zeros(41);
 		classification[i] = 1;
 
 		for (int j = 1; j <= 10; ++j) {
@@ -79,9 +85,30 @@ int main() {
 		}
 	}
 
+	faces.normalizeX(0, 1);
+
 	// split the dataset into training (70%) and testing (30%)
-	vector<Dataset> parts = Dataset::split(faces, { 70, 30 }, true);
-	Dataset training = parts[0], testing = parts[1];
+	Dataset training, testing;
+	Dataset indexes;
+	for (double i = 0; i < 10; ++i) {
+		indexes.add(DataPoint({ i }));
+	}
+
+	for (int i = 0; i < 41; ++i) {
+		size_t startIndex = i * 10;
+		indexes.shuffle();
+
+		for (size_t j = 0; j < 10; ++j) {
+			if (j < 7) {
+				training.add(faces[startIndex + indexes[j].x[0]]);
+			} else {
+				testing.add(faces[startIndex + indexes[j].x[0]]);
+			}
+		}
+	}
+
+	// just to increase diversity on the examples
+	testing.shuffle();
 
 
 	PCA model;
@@ -129,13 +156,13 @@ int main() {
 		}
 
 		// draw original image
-		drawImage(&predictions[index * 3 + 0], posX, -1.5 - 1.1 * posY, posX + 1, -0.5 - 1.1 * posY, graph, testing[i].x, width);
+		drawImage(&predictions[index * 3 + 0], posX, -1.5 - 1.1 * posY, posX + 1, -0.5 - 1.1 * posY, graph, faces.unnormalizeX(testing[i].x), width);
 
 		// draw reconstructed image
-		drawImage(&predictions[index * 3 + 1], posX + 1.1, -1.5 - 1.1 * posY, posX + 2.1, -0.5 - 1.1 * posY, graph, model.toOriginalSpace(testingTransformed[i]).x, width);
+		drawImage(&predictions[index * 3 + 1], posX + 1.1, -1.5 - 1.1 * posY, posX + 2.1, -0.5 - 1.1 * posY, graph, faces.unnormalizeX(model.toOriginalSpace(testingTransformed[i]).x), width);
 
 		// draw predicted image
-		drawImage(&predictions[index * 3 + 2], posX + 2.2, -1.5 - 1.1 * posY, posX + 3.2, -0.5 - 1.1 * posY, graph, training[j].x, width);
+		drawImage(&predictions[index * 3 + 2], posX + 2.2, -1.5 - 1.1 * posY, posX + 3.2, -0.5 - 1.1 * posY, graph, faces.unnormalizeX(training[j].x), width);
 	}
 	cout << "Got " << corrects << " correct answers out of " << testing.size << ". This is " <<  100 * static_cast<double>(corrects) / static_cast<double>(testing.size) << "% accuracy.\n";
 
@@ -144,7 +171,7 @@ int main() {
 
 
 	// display the mean face
-	Vec meanFace = model.mean;
+	Vec meanFace = faces.unnormalizeX(model.mean);
 	olc::Sprite meanFaceSprite(width, height);
 	for (size_t i = 0; i < faces.dimX; ++i) {
 
